@@ -4,7 +4,7 @@
 #' @param ec_pvals A file with EC p-values
 #' @param metabolite_pvals A file with metabolite p-values
 #'
-#' @NoRd
+#' @noRd
 read_inputs <- function(global_network_edges, ec_pvals, metabolite_pvals) {
 
   # Read clean network files
@@ -71,10 +71,7 @@ read_inputs <- function(global_network_edges, ec_pvals, metabolite_pvals) {
 
 #' Initialize an igraph object with nodes marked as either anchors (1),
 #'  non-anchors (2), or unknown (3).
-#'
-#' @return An igraph object
-#'
-#' @NoRd
+#' @noRd
 init_graph <- function(edges, mtb_df, ec_df) {
   require(igraph)
 
@@ -134,7 +131,7 @@ init_graph <- function(edges, mtb_df, ec_df) {
 #'   single disease-associated metabolic module, using the random coloring of
 #'   nodes by their p-values as described in the manuscript.
 #'
-#' @NoRd
+#' @noRd
 get_anchor_matrix <- function(
     g,
     anchors,
@@ -228,7 +225,7 @@ get_anchor_matrix <- function(
 
 #' Identify modules with hierarchical clustering
 #'
-#' @NoRd
+#' @noRd
 extract_modules_with_hclust <- function(
     anchors_mat,
     g_nodes,
@@ -303,7 +300,7 @@ extract_modules_with_hclust <- function(
 #'
 #' Assumes that graph nodes have an attribute called 'type'
 #'
-#' @NoRd
+#' @noRd
 permute_by_node_type <- function(g) {
   # Extract node and edge lists of current graph
   edges_tmp <- as_data_frame(g, 'edges')
@@ -327,18 +324,22 @@ permute_by_node_type <- function(g) {
   return(g_permuted)
 }
 
-#' @NoRd
-plot_true_vs_permuted_module_no_and_size <- function(modules_perm, N_VAL_PERM, MIN_MOD_SIZE) {
+#' @noRd
+plot_true_vs_permuted_module_no_and_size <- function(
+    modules_perm,
+    N_VAL_PERM,
+    MIN_MOD_SIZE,
+    title = '') {
   tmp <- data.frame('Permutation_ID' = 1:N_VAL_PERM) %>% # Required so that permutations that resulted in no modules at all are also considered
     full_join(modules_perm, by = 'Permutation_ID') %>%
     group_by(Permutation_ID) %>%
-    summarise(num_modules = sum(!is.na(n_reds)),
-              mean_module_size = mean(n_reds),
-              sd_module_size = sd(n_reds),
+    summarise(num_modules = sum(!is.na(n_anchors)),
+              mean_module_size = mean(n_anchors),
+              sd_module_size = sd(n_anchors),
               .groups = 'drop') %>%
     mutate(mean_module_size = ifelse(is.na(mean_module_size), MIN_MOD_SIZE, mean_module_size)) %>%
     mutate(Category = ifelse(Permutation_ID==-1, 'True', 'Permuted'))
-  log_info('Average number of modules in permuted graphs: ', round(mean(tmp$num_modules[-1]),2))
+  # log_info('Average number of modules in permuted graphs: ', round(mean(tmp$num_modules[-1]),2))
 
   ggplot(tmp, aes(x = num_modules, y = mean_module_size, fill = Category, size = Category)) +
     geom_jitter(color = 'black', shape = 21, alpha = 0.7, width = 0.2, height = 0.05) +
@@ -347,7 +348,9 @@ plot_true_vs_permuted_module_no_and_size <- function(modules_perm, N_VAL_PERM, M
     scale_size_manual(values = c(2, 4)) +
     scale_y_continuous(expand = c(0.1, 0.1)) +
     scale_x_continuous(expand = c(0.1, 0.1)) +
-    xlab('Total number of modules\n(before significance testing)') +
-    ylab('Average size of final modules\n(anchors only)') +
-    theme(legend.title = element_blank())
+    ggtitle(title) +
+    xlab('Total number of modules') +
+    ylab('Average size of modules\n(anchors only)') +
+    theme(legend.title = element_blank()) +
+    theme(plot.title = element_text(hjust = 0.5, face = 'bold'))
 }

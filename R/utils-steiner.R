@@ -4,7 +4,7 @@
 #'  methods for optimal sub-network identification: an empirical study",
 #'  BMC Bioinformatics 2013 14:144 doi:10.1186/1471-2105-14-144.
 #'
-#' @NoRd
+#' @noRd
 steinertree_KB <- function(terminals, g) {
 
   # Helper function:
@@ -89,7 +89,7 @@ steinertree_KB <- function(terminals, g) {
 #' Recieves a list of modules, each including a set of nodes, and computes a
 #'   steiner tree to assure each module forms a connected subgraph
 #'
-#' @NoRd
+#' @noRd
 complete_modules_with_steiner <- function(
     g,
     modules_overview,

@@ -1,7 +1,7 @@
 #' Use functions from the BioNet package to fit a beta-uniform mixture model
 #' The df table is expected to have a "pval" column and a "feature" column
 #'
-#' @NoRd
+#' @noRd
 fit_bum_model <- function(df, node_type, plot_dir, EPS = 0.000000001) {
   require(BioNet)
   pvals <- df$pval
@@ -23,7 +23,7 @@ fit_bum_model <- function(df, node_type, plot_dir, EPS = 0.000000001) {
 
 #' Randomly sample a value given BUM parameters
 #'
-#' @NoRd
+#' @noRd
 sample_from_bum <- function(a, lambda, N = 1) {
   beta_shape1 <- c(a, 1)
   # beta_shape1[1] is the beta distribution,
