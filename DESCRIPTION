@@ -1,0 +1,10 @@
+Package: MAAMOUL
+Type: Package
+Title: A method for detecting microbiome-metabolome alterations in disease using metabolic networks
+Version: 0.1.0
+Author: Efrat Muller
+Maintainer: Efrat Muller
+Description: TBC
+License: GNU GENERAL PUBLIC LICENSE
+Encoding: UTF-8
+LazyData: true
