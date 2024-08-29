@@ -251,7 +251,7 @@ extract_modules_with_hclust <- function(
 
   # Plot
   if (!is.null(plot_outfile)) {
-    p_width = max(10, round(ncol(anchors_mat) / 25))
+    p_width = max(10, round(ncol(anchors_mat) / 20))
     svg(file = plot_outfile, width = p_width, height = 5)
     p <- dhc %>%
       set("leaves_pch", c(17,19)[leaf_types]) %>%
