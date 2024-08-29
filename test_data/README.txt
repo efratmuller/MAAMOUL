@@ -1,0 +1,2 @@
+Data files are based on differential abundance testing of fecal metagenomic-based EC features, and metabolite features, from CD patients and healthy controls [Franzosa et al. Nat Microbiol. 2019]. 
+See MAAMOUL manuscript for further details about the differential abundance testing that was performed.
