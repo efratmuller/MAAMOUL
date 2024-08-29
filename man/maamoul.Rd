@@ -2,7 +2,8 @@
 % Please edit documentation in R/maamoul.R
 \name{maamoul}
 \alias{maamoul}
-\title{Title}
+\title{MAAMOUL: A method for detecting microbiome-metabolome alterations in disease
+  using metabolic networks}
 \usage{
 maamoul(
   global_network_edges,
@@ -16,11 +17,11 @@ maamoul(
   HCLUST_METHOD = "average",
   CUTREE_H = 0.8,
   MIN_MOD_SIZE = 3,
-  MIN_METS_IN_MOD = 0,
   MIN_ECS_IN_MOD = 0,
+  MIN_METS_IN_MOD = 0,
   N_VAL_PERM = 99,
-  N_THREADS = 1,
-  MODULE_FDR_THRESHOLD = 0.2
+  MODULE_FDR_THRESHOLD = 0.2,
+  N_THREADS = 1
 )
 }
 \arguments{
@@ -45,25 +46,51 @@ as in the global network file.}
 
 \item{SEED}{An integer to be used as a seed for result reproducibility.}
 
+\item{NODE_FDR_THRESHOLD}{The FDR threshold to determine which nodes should
+be treated as 'anchors' (i.e. estimated to be disease-associated).
+Default: 0.1.}
+
 \item{N_REPEATS}{The number of random coloring of nodes to perform.}
 
-\item{HCLUST_METHOD}{Either 'average', 'single' or 'complete'. See `?hclust`.}
+\item{MAX_DIST_BTWN_REDS}{A maximal distance between nodes for them to be
+considered as taking part in the same disease-associated module.
+Default: 4.}
 
-\item{MIN_MOD_SIZE}{The minimal size of a module to be outputted.}
+\item{HCLUST_METHOD}{Either 'average', 'single' or 'complete'. Default:
+'average'. See `?hclust`.}
 
-\item{MIN_METS_IN_MOD}{Modules with less than this number of metabolite nodes
-will be discarded.}
+\item{CUTREE_H}{The height at which the hierarchical tree is cut to determine
+clusters.}
+
+\item{MIN_MOD_SIZE}{The minimal size of a module to be outputted. Default: 3.}
 
 \item{MIN_ECS_IN_MOD}{Modules with less than this number of EC nodes will be
-discarded.}
+discarded. Default: 0.}
+
+\item{MIN_METS_IN_MOD}{Modules with less than this number of metabolite nodes
+will be discarded. Default: 0.}
 
 \item{N_VAL_PERM}{Number of node-weight permutations to perform for
 calculating the significance of each module.}
 
+\item{MODULE_FDR_THRESHOLD}{The FDR threshold to determine which modules are
+significant.}
+
 \item{N_THREADS}{Number of threads available for parallel computing.}
 }
+\value{
+The method outputs several tables and plots to the `OUT_DIR` folder.
+}
 \description{
-Description
+MAAMOUL is a knowledge-based computational method that integrates metagenomic
+  and metabolomic data to identify custom data-driven microbial metabolic
+  modules associated with disease states. Unlike traditional statistical
+  approaches, MAAMOUL leverages prior biological knowledge about bacterial
+  metabolism to link genes to metabolites through a global, microbiome-wide
+  metabolic network, and then projects genes' and metabolites' disease-
+  association scores onto this network. The identified 'modules' are
+  sub-networks in this graph that are significantly enriched with disease-
+  associated features, both metagenomic and metabolomic.
 }
 \examples{
 maamoul_output <- maamoul(
@@ -74,6 +101,5 @@ maamoul_output <- maamoul(
   N_REPEATS = 100,
   N_VAL_PERM = 9,
   N_THREADS = 4
-  )
-  maamoul_output <- maamoul(global_network_edges = 'global_network/kegg_mapformula_clean/enzyme_compound_edges.csv',ec_pvals = 'test_data/ec_pvals.tsv',metabolite_pvals = 'test_data/mtb_pvals.tsv',OUT_DIR = 'test_outputs',N_REPEATS = 100,N_VAL_PERM = 9,N_THREADS = 4)
+)
 }

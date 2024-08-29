@@ -1,6 +1,15 @@
-#' Title
+#' MAAMOUL: A method for detecting microbiome-metabolome alterations in disease
+#'   using metabolic networks
 #'
-#' Description
+#' MAAMOUL is a knowledge-based computational method that integrates metagenomic
+#'   and metabolomic data to identify custom data-driven microbial metabolic
+#'   modules associated with disease states. Unlike traditional statistical
+#'   approaches, MAAMOUL leverages prior biological knowledge about bacterial
+#'   metabolism to link genes to metabolites through a global, microbiome-wide
+#'   metabolic network, and then projects genes' and metabolites' disease-
+#'   association scores onto this network. The identified 'modules' are
+#'   sub-networks in this graph that are significantly enriched with disease-
+#'   associated features, both metagenomic and metabolomic.
 #'
 #' @param global_network_edges A path to a file holding the list of edges to be
 #'   included in the global metabolic network. The file should be comma-
@@ -18,21 +27,30 @@
 #'   as in the global network file.
 #' @param OUT_DIR A folder in which all output files will be saved.
 #' @param SEED An integer to be used as a seed for result reproducibility.
-#' @param NODE_FDR_THRESHOLD
+#' @param NODE_FDR_THRESHOLD The FDR threshold to determine which nodes should
+#'   be treated as 'anchors' (i.e. estimated to be disease-associated).
+#'   Default: 0.1.
 #' @param N_REPEATS The number of random coloring of nodes to perform.
-#' @param MAX_DIST_BTWN_REDS
-#' @param HCLUST_METHOD Either 'average', 'single' or 'complete'. See `?hclust`.
-#' @param CUTREE_H
-#' @param MIN_MOD_SIZE The minimal size of a module to be outputted.
+#' @param MAX_DIST_BTWN_REDS A maximal distance between nodes for them to be
+#'   considered as taking part in the same disease-associated module.
+#'   Default: 4.
+#' @param HCLUST_METHOD Either 'average', 'single' or 'complete'. Default:
+#'   'average'. See `?hclust`.
+#' @param CUTREE_H The height at which the hierarchical tree is cut to determine
+#'   clusters.
+#' @param MIN_MOD_SIZE The minimal size of a module to be outputted. Default: 3.
 #' @param MIN_METS_IN_MOD Modules with less than this number of metabolite nodes
-#'   will be discarded.
+#'   will be discarded. Default: 0.
 #' @param MIN_ECS_IN_MOD Modules with less than this number of EC nodes will be
-#'   discarded.
+#'   discarded. Default: 0.
 #' @param N_VAL_PERM Number of node-weight permutations to perform for
 #'   calculating the significance of each module.
+#' @param MODULE_FDR_THRESHOLD The FDR threshold to determine which modules are
+#'   significant.
 #' @param N_THREADS Number of threads available for parallel computing.
 #'
-#' @return
+#' @return The method outputs several tables and plots to the `OUT_DIR` folder.
+#'
 #' @export
 #'
 #' @examples
@@ -60,11 +78,11 @@ maamoul <- function(
   HCLUST_METHOD = 'average',
   CUTREE_H = 0.8,
   MIN_MOD_SIZE = 3,
-  MIN_METS_IN_MOD = 0,
   MIN_ECS_IN_MOD = 0,
+  MIN_METS_IN_MOD = 0,
   N_VAL_PERM = 99,
-  N_THREADS = 1,
-  MODULE_FDR_THRESHOLD = 0.2
+  MODULE_FDR_THRESHOLD = 0.2,
+  N_THREADS = 1
 ) {
 
   # Check that all required packages are installed
@@ -77,6 +95,7 @@ maamoul <- function(
   if (! "BioNet" %in% installed)       stop("Please install package 'BioNet'")
   if (! "ggplot2" %in% installed)      stop("Please install package 'ggplot2'")
   if (! "RColorBrewer" %in% installed) stop("Please install package 'RColorBrewer'")
+  if (! "dendextend" %in% installed) stop("Please install package 'dendextend'")
   if (! "cowplot" %in% installed) stop("Please install package 'cowplot'")
   if (! "foreach" %in% installed)      stop("Please install package 'conflicted'")
   if (! "doSNOW" %in% installed)       stop("Please install package 'stringr'")
@@ -91,6 +110,7 @@ maamoul <- function(
   suppressMessages(require(BioNet))       # Tested with version:
   suppressMessages(require(ggplot2))      # Tested with version:
   suppressMessages(require(RColorBrewer)) # Tested with version:
+  suppressMessages(require(dendextend)) # Tested with version:
   suppressMessages(require(cowplot)) # Tested with version:
   suppressMessages(require(foreach))      # Tested with version:
   suppressMessages(require(doSNOW))       # Tested with version:
@@ -102,7 +122,7 @@ maamoul <- function(
   if (!file.exists(global_network_edges))      log_error('Invalid *global_network_edges* argument. File not found')
   if (!file.exists(ec_pvals))                  log_error('Invalid *ec_pvals* argument. File not found')
   if (!file.exists(metabolite_pvals))          log_error('Invalid *metabolite_pvals* argument. File not found')
-  if (!is.numeric(NODE_FDR_THRESHOLD))              log_error('Invalid *NODE_FDR_THRESHOLD* argument. Should be a number between 0 and 1 (recommended: <= 0.1)')
+  if (!is.numeric(NODE_FDR_THRESHOLD))         log_error('Invalid *NODE_FDR_THRESHOLD* argument. Should be a number between 0 and 1 (recommended: <= 0.1)')
   if (NODE_FDR_THRESHOLD <= 0 | NODE_FDR_THRESHOLD >= 1) log_error('Invalid *NODE_FDR_THRESHOLD* argument. Should be a number between 0 and 1 (recommended: <= 0.1)')
   if (!is.numeric(N_REPEATS))                  log_error('Invalid *N_REPEATS* argument. Should be an integer > 10')
   if (N_REPEATS < 10)                          log_error('Invalid *N_REPEATS* argument. Should be an integer > 10')
@@ -127,16 +147,12 @@ maamoul <- function(
   EPS = 0.000000001
 
   # Create required output folders
-  if (dir.exists(OUT_DIR)) log_info('Output directory "',OUT_DIR,'" already exists. Files may be overriden')
+  if (dir.exists(OUT_DIR)) log_info('Output directory "',OUT_DIR,'" already exists. Files may be overriden.')
   dir.create(OUT_DIR, showWarnings = F, recursive = T)
 
-  # Setup local cluster for parallel computing
-  cl <- makeCluster(N_THREADS)
-  registerDoSNOW(cl)
-
   # Start pipeline
-  log_info('Working directory is: ', getwd())
-  log_info('Starting module-identification pipeline')
+  log_info('Working directory is: ', getwd(),'.')
+  log_info('Starting module-identification pipeline.')
   set.seed(SEED)
 
   # ----------------------------------------------------------------------------
@@ -144,21 +160,21 @@ maamoul <- function(
   # ----------------------------------------------------------------------------
 
   input <- read_inputs(global_network_edges, ec_pvals, metabolite_pvals)
-  log_info('Loaded network information and feature p-values')
+  log_info('Loaded network information and feature p-values.')
 
   # Print some statistics about the overlap of observed features and network nodes
   log_info(sum(input$mtb_pvals$feature %in% input$all_net_nodes),
            ' of ', nrow(input$mtb_pvals),
-           ' observed metabolite features are also in the network')
+           ' observed metabolite features are also in the network.')
 
   log_info(sum(input$ec_pvals$feature %in% input$all_net_nodes),
            ' of ', nrow(input$ec_pvals),
-           ' observed EC features are also in the network')
+           ' observed EC features are also in the network.')
 
   log_info(sum(input$all_net_nodes %in%
                  c(input$ec_pvals$feature, input$mtb_pvals$feature)),
            ' of ', length(input$all_net_nodes),
-           ' network nodes are observed in the data')
+           ' network nodes are observed in the data.')
 
   # ----------------------------------------------------------------------------
   # 2. Model p-values as beta-uniform mixture models and mark anchor nodes
@@ -181,7 +197,7 @@ maamoul <- function(
   #  https://rdrr.io/github/assaron/BioNet/src/R/Statistics.R
   mtb_thres <- fdrThreshold(NODE_FDR_THRESHOLD, bum_mtb) %>% round(4)
   if (mtb_thres < 0.001) mtb_thres <- 0.001 # We define a minimal threshold for cases where BUM-based thresholds are extremely low
-  log_info('Metabolite p-value threshold based on BUM: ', mtb_thres)
+  log_info('Metabolite p-value threshold based on BUM: ', mtb_thres, '.')
 
   # Mark metabolites as either anchor nodes (1) or not (2)
   input$mtb_pvals$anchor <- ifelse(input$mtb_pvals$pval < mtb_thres, 1, 2)
@@ -195,7 +211,7 @@ maamoul <- function(
   )
   ec_thres <- fdrThreshold(NODE_FDR_THRESHOLD, bum_ec) %>% round(4)
   if (ec_thres < 0.001) ec_thres <- 0.001
-  log_info('EC p-value threshold based on BUM: ', ec_thres)
+  log_info('EC p-value threshold based on BUM: ', ec_thres, '.')
   input$ec_pvals$anchor <- ifelse(input$ec_pvals$pval < ec_thres, 1, 2)
   n_ec_anchors <- sum(input$ec_pvals$anchor == 1)
 
@@ -210,10 +226,10 @@ maamoul <- function(
     write_csv(file.path(OUT_DIR, 'bum_parameters.csv'))
 
   if (n_mtb_anchors == 0)
-    log_error('No anchor metabolites were found. Consider relaxing your FDR threshold')
+    log_error('No anchor metabolites were found. Consider relaxing your FDR threshold.')
   if (n_ec_anchors == 0)
-    log_error('No anchor ECs were found. Consider relaxing your FDR threshold')
-  log_info('Found ', n_ec_anchors, ' EC anchor nodes and ', n_mtb_anchors, ' metabolite anchor nodes')
+    log_error('No anchor ECs were found. Consider relaxing your FDR threshold.')
+  log_info('Found ', n_ec_anchors, ' EC anchor nodes and ', n_mtb_anchors, ' metabolite anchor nodes.')
 
   # ----------------------------------------------------------------------------
   # 3. Initialize graph
@@ -268,7 +284,7 @@ maamoul <- function(
   module_assignments <- modules$module_assignments
   modules_overview <- modules$modules_overview
 
-  log_info('Identified a total of ', nrow(modules_overview),' modules (before significance testing)')
+  log_info('Identified a total of ', nrow(modules_overview),' modules (before significance testing).')
   if (nrow(module_assignments) == 0) log_error('No modules identified')
 
   # ----------------------------------------------------------------------------
@@ -287,14 +303,21 @@ maamoul <- function(
   #    significance
   # ----------------------------------------------------------------------------
 
+  # Setup local cluster for parallel computing
+  cl <- makeCluster(N_THREADS)
+  registerDoSNOW(cl)
+  pb <- txtProgressBar(max = N_VAL_PERM, style = 3)
+  progress <- function(n) setTxtProgressBar(pb, n)
+
   # Perform N_VAL_PERM permutations over node p-values, and then repeat all steps
   #  as before to get a "null distribution" of modules.
-
-  log_info('Starting graph random coloring iterations - permuted graphs')
+  log_info('Starting graph random coloring iterations - permuted graphs.')
   modules_perm <-
     foreach(j = 1:N_VAL_PERM,
             .combine='rbind',
+            .options.snow = list(progress = progress),
             .packages = c('dplyr','igraph','logger')) %dopar% {
+
               # Permute p-values, within each node type (EC/metabolite)
               g_permuted <- permute_by_node_type(g_init)
 
@@ -325,8 +348,7 @@ maamoul <- function(
 
               # Note: For the 'null' modules we are only interested in the
               #  number of EC and metabolite anchors and their average p value
-              #  per module, so we skip the steiner tree step and simply
-              #  organize anchor data in one table.
+              #  per module, so we skip the steiner tree step.
 
               # # And lastly use steiner algorithm to complete each module into a
               # #  connected subgraph
@@ -339,7 +361,7 @@ maamoul <- function(
               # Return
               tmp$modules_overview %>% mutate(Permutation_ID = j)
   }
-  log_info('Finished graph random coloring iterations - permuted graphs')
+  log_info('Finished graph random coloring iterations - permuted graphs.')
 
   modules_perm <- bind_rows(
     modules_overview %>% mutate(Permutation_ID = -1),
@@ -372,7 +394,7 @@ maamoul <- function(
     left_join(tmp, by = c('module_id', 'Permutation_ID'))
 
   # For each module, compute how many modules *across all permutations* were
-  #  better. Accordingly, compute the module's p-value.
+  #  just as good. Accordingly, compute the module's p-value.
   tmp <- cross_join(
     modules_perm,
     modules_perm %>% rename_with(function(s) paste0(s,'.y'))
@@ -390,18 +412,22 @@ maamoul <- function(
     mutate(module_FDR = p.adjust(module_pval, 'fdr')) %>%
     ungroup() %>%
     select(-nom)
+
   modules_perm <- modules_perm %>%
     left_join(tmp, by = c('module_id', 'Permutation_ID'))
-  log_info('Computed modules significance')
+
+  log_info('Computed modules\' significance.')
 
   # Also add module-FDR info to main module overview
   modules_overview <- modules_overview %>%
-    left_join(modules_perm %>% filter(Permutation_ID == -1) %>% select(module_id, module_pval, module_FDR),
+    left_join(modules_perm %>%
+                filter(Permutation_ID == -1) %>%
+                select(module_id, module_pval, module_FDR),
               by = 'module_id')
 
   # Sanity check 1: Do permuted versions consistently result in fewer/smaller
   #  modules? (Note: these are not necessarily significant)
-  p1 <- plot_true_vs_permuted_module_no_and_size(
+  p1 <- plot_true_vs_permuted_modules(
     modules_perm,
     N_VAL_PERM,
     MIN_MOD_SIZE,
@@ -410,8 +436,9 @@ maamoul <- function(
 
   # Sanity check 2: Do permuted versions consistently result in fewer/smaller
   #  *significant* modules?
-  p2 <- plot_true_vs_permuted_module_no_and_size(
-    modules_perm %>% filter(module_FDR <= MODULE_FDR_THRESHOLD),
+  p2 <- plot_true_vs_permuted_modules(
+    modules_perm %>%
+      filter(module_FDR <= MODULE_FDR_THRESHOLD),
     N_VAL_PERM,
     MIN_MOD_SIZE,
     title = 'Significant modules only'
@@ -437,5 +464,7 @@ maamoul <- function(
   write_csv(modules_overview, outfile1)
   write_csv(complete_modules, outfile2)
   save(g_init, complete_modules, modules_overview, file = outfile3)
+
   log_info('Done!')
+
 }
