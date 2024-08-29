@@ -251,7 +251,8 @@ extract_modules_with_hclust <- function(
 
   # Plot
   if (!is.null(plot_outfile)) {
-    svg(file = plot_outfile, width = 15, height = 5)
+    p_width = max(10, round(ncol(anchors_mat) / 25))
+    svg(file = plot_outfile, width = p_width, height = 5)
     p <- dhc %>%
       set("leaves_pch", c(17,19)[leaf_types]) %>%
       set("leaves_col", c("mediumorchid4", "darkgreen")[leaf_types]) %>%
@@ -325,7 +326,7 @@ permute_by_node_type <- function(g) {
 }
 
 #' @noRd
-plot_true_vs_permuted_module_no_and_size <- function(
+plot_true_vs_permuted_modules <- function(
     modules_perm,
     N_VAL_PERM,
     MIN_MOD_SIZE,
