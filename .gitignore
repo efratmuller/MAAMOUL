@@ -4,3 +4,4 @@
 .Ruserdata
 *.Rproj
 /test_outputs
+/test_input
