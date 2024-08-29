@@ -20,7 +20,7 @@ For further details see: Muller E, Baum S, and Borenstein E. __"Detecting Microb
 <a id="ch2"></a>
 ## Installation
 
-MintTea can be installed directly from GitHub, by running the following:
+MAAMOUL can be installed directly from GitHub, by running the following:
 
 ```
 install.packages(devtools)  
