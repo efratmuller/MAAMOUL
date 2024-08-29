@@ -54,17 +54,16 @@
 #' @export
 #'
 #' @examples
-#' maamoul_output <- maamoul(
-#'   global_network_edges = 'global_network/kegg_mapformula_clean/enzyme_compound_edges.csv',
-#'   ec_pvals = 'test_data/ec_pvals.tsv',
-#'   metabolite_pvals = 'test_data/mtb_pvals.tsv',
+#' write_test_files()
+#' maamoul(
+#'   global_network_edges = 'test_input/enzyme_compound_edges_kegg.csv',
+#'   ec_pvals = 'test_input/ec_pvals.tsv',
+#'   metabolite_pvals = 'test_input/mtb_pvals.tsv',
 #'   OUT_DIR = 'test_outputs',
 #'   N_REPEATS = 100,
 #'   N_VAL_PERM = 9,
 #'   N_THREADS = 4
 #'   )
-#'
-#'   maamoul_output <- maamoul(global_network_edges = 'global_network/kegg_mapformula_clean/enzyme_compound_edges.csv',ec_pvals = 'test_data/ec_pvals.tsv',metabolite_pvals = 'test_data/mtb_pvals.tsv',OUT_DIR = 'test_outputs',N_REPEATS = 100,N_VAL_PERM = 9,N_THREADS = 4)
 maamoul <- function(
   global_network_edges,
   ec_pvals,
@@ -466,5 +465,5 @@ maamoul <- function(
   save(g_init, complete_modules, modules_overview, file = outfile3)
 
   log_info('Done!')
-
+  return()
 }
