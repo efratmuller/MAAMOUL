@@ -11,7 +11,7 @@
 
 MAAMOUL is a knowledge-based computational method that integrates metagenomic and metabolomic data to identify custom data-driven microbial metabolic modules associated with disease states. Unlike traditional statistical approaches, MAAMOUL leverages prior biological knowledge about bacterial metabolism to link genes to metabolites through a global, microbiome-wide metabolic network, and then projects genes' and metabolites' disease-association scores onto this network. The identified 'modules' are sub-networks in this graph that are significantly enriched with disease-associated features, both metagenomic and metabolomic.
 
-For further details see: Muller E, Baum S, and Borenstein E. __"Detecting Microbiome-Metabolome Alterations in Disease Using Metabolic Networks."__ _In preparation_ 
+For further details see: Muller E, Baum S, and Borenstein E. __"Detecting Microbiome-Metabolome Alterations in Disease Using Metabolic Networks."__ _In preparation_.
 
 <img src="docs/wiki_figure.png" width="700">
 
@@ -28,6 +28,8 @@ library(devtools)
 install_github("efratmuller/MAAMOUL")   
 library(MAAMOUL)
 ```
+
+Note: The MAAMOUL package is dependant on the installation of the 'BioNet' package [1]. See installation instructions [here](https://www.bioconductor.org/packages/release/bioc/html/BioNet.html).
 
 ***
    
@@ -59,3 +61,7 @@ maamoul(global_network_edges = 'test_input/enzyme_compound_edges_kegg.csv',
 For questions about the pipeline, please open an issue (https://github.com/efratmuller/MAAMOUL/issues) or contact Prof. Elhanan Borenstein at elbo@tauex.tau.ac.il.
 
 ***
+
+__References__
+
+1. Beisser D, Klau GW, Dandekar T, Mueller T, Dittrich M (2010). “BioNet: an R-package for the Functional Analysis of Biological Networks.” Bioinformatics, 26(8), 1129-1130.
