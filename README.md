@@ -23,7 +23,7 @@ For further details see: Muller E, Baum S, and Borenstein E. __"Detecting Microb
 MAAMOUL can be installed directly from GitHub, by running the following:
 
 ```
-install.packages(devtools)  
+install.packages("devtools")  
 library(devtools)   
 install_github("efratmuller/MAAMOUL")   
 library(MAAMOUL)
