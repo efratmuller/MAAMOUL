@@ -25,7 +25,7 @@
 #' @param metabolite_pvals Similar to the `ec_pvals` file, but listing
 #'   metabolite p-values. Metabolite codes/names should be in the same format
 #'   as in the global network file.
-#' @param OUT_DIR A folder in which all output files will be saved.
+#' @param out_dir A folder in which all output files will be saved.
 #' @param SEED An integer to be used as a seed for result reproducibility.
 #' @param NODE_FDR_THRESHOLD The FDR threshold to determine which nodes should
 #'   be treated as 'anchors' (i.e. estimated to be disease-associated).
@@ -49,7 +49,7 @@
 #'   significant.
 #' @param N_THREADS Number of threads available for parallel computing.
 #'
-#' @return The method outputs several tables and plots to the `OUT_DIR` folder.
+#' @return The method outputs several tables and plots to the `out_dir` folder.
 #'
 #' @export
 #'
@@ -59,7 +59,7 @@
 #'   global_network_edges = 'test_input/enzyme_compound_edges_kegg.csv',
 #'   ec_pvals = 'test_input/ec_pvals.tsv',
 #'   metabolite_pvals = 'test_input/mtb_pvals.tsv',
-#'   OUT_DIR = 'test_outputs',
+#'   out_dir = 'test_outputs',
 #'   N_REPEATS = 100,
 #'   N_VAL_PERM = 9,
 #'   N_THREADS = 4
@@ -68,7 +68,7 @@ maamoul <- function(
   global_network_edges,
   ec_pvals,
   metabolite_pvals,
-  OUT_DIR,
+  out_dir,
   # Misc. parameters
   SEED = 710,
   NODE_FDR_THRESHOLD = 0.1,
@@ -146,8 +146,8 @@ maamoul <- function(
   EPS = 0.000000001
 
   # Create required output folders
-  if (dir.exists(OUT_DIR)) log_info('Output directory "',OUT_DIR,'" already exists. Files may be overriden.')
-  dir.create(OUT_DIR, showWarnings = F, recursive = T)
+  if (dir.exists(out_dir)) log_info('Output directory "',out_dir,'" already exists. Files may be overriden.')
+  dir.create(out_dir, showWarnings = F, recursive = T)
 
   # Start pipeline
   log_info('Working directory is: ', getwd(),'.')
@@ -184,7 +184,7 @@ maamoul <- function(
   bum_mtb <- fit_bum_model(
     input$mtb_pvals,
     node_type = 'mtb',
-    plot_dir = OUT_DIR
+    plot_dir = out_dir
   )
 
   # Calculate a threshold for metabolite p-values corresponding to the desired FDR.
@@ -206,7 +206,7 @@ maamoul <- function(
   bum_ec <- fit_bum_model(
     input$ec_pvals,
     node_type = 'ec',
-    plot_dir = OUT_DIR
+    plot_dir = out_dir
   )
   ec_thres <- fdrThreshold(NODE_FDR_THRESHOLD, bum_ec) %>% round(4)
   if (ec_thres < 0.001) ec_thres <- 0.001
@@ -222,7 +222,7 @@ maamoul <- function(
     FDR_THRESHOLD = NODE_FDR_THRESHOLD,
     anchor_pval_threshold = c(mtb_thres, ec_thres)
   ) %>%
-    write_csv(file.path(OUT_DIR, 'bum_parameters.csv'))
+    write_csv(file.path(out_dir, 'bum_parameters.csv'))
 
   if (n_mtb_anchors == 0)
     log_error('No anchor metabolites were found. Consider relaxing your FDR threshold.')
@@ -278,7 +278,7 @@ maamoul <- function(
     MIN_METS_IN_MOD,
     MIN_ECS_IN_MOD,
     HCLUST_METHOD,
-    plot_outfile = file.path(OUT_DIR, 'anchors_dendogram.svg')
+    plot_outfile = file.path(out_dir, 'anchors_dendogram.svg')
   )
   module_assignments <- modules$module_assignments
   modules_overview <- modules$modules_overview
@@ -442,7 +442,7 @@ maamoul <- function(
     MIN_MOD_SIZE,
     title = 'Significant modules only'
   )
-  plot_outfile <- file.path(OUT_DIR, 'true_vs_permuted_modules.png')
+  plot_outfile <- file.path(out_dir, 'true_vs_permuted_modules.png')
   ggsave(
     plot_outfile,
     plot_grid(p1 + theme(plot.margin = unit(c(0.5,0.1,0.2,0.2), "cm")),
@@ -457,9 +457,9 @@ maamoul <- function(
   # ----------------------------------------------------------------------------
 
   # Save graph, module assignments, and module overview
-  outfile1 <- file.path(OUT_DIR, 'modules_overview.csv')
-  outfile2 <- file.path(OUT_DIR, 'complete_modules.csv')
-  outfile3 <- file.path(OUT_DIR, 'graph_and_data.rdata')
+  outfile1 <- file.path(out_dir, 'modules_overview.csv')
+  outfile2 <- file.path(out_dir, 'complete_modules.csv')
+  outfile3 <- file.path(out_dir, 'graph_and_data.rdata')
   write_csv(modules_overview, outfile1)
   write_csv(complete_modules, outfile2)
   save(g_init, complete_modules, modules_overview, file = outfile3)

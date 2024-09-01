@@ -98,7 +98,7 @@ maamoul(
   global_network_edges = 'test_input/enzyme_compound_edges_kegg.csv',
   ec_pvals = 'test_input/ec_pvals.tsv',
   metabolite_pvals = 'test_input/mtb_pvals.tsv',
-  OUT_DIR = 'test_outputs',
+  out_dir = 'test_outputs',
   N_REPEATS = 100,
   N_VAL_PERM = 9,
   N_THREADS = 4
