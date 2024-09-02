@@ -9,7 +9,7 @@ maamoul(
   global_network_edges,
   ec_pvals,
   metabolite_pvals,
-  OUT_DIR,
+  out_dir,
   SEED = 710,
   NODE_FDR_THRESHOLD = 0.1,
   N_REPEATS = 1000,
@@ -42,7 +42,7 @@ columns will be ignored.}
 metabolite p-values. Metabolite codes/names should be in the same format
 as in the global network file.}
 
-\item{OUT_DIR}{A folder in which all output files will be saved.}
+\item{out_dir}{A folder in which all output files will be saved.}
 
 \item{SEED}{An integer to be used as a seed for result reproducibility.}
 
@@ -76,10 +76,11 @@ calculating the significance of each module.}
 \item{MODULE_FDR_THRESHOLD}{The FDR threshold to determine which modules are
 significant.}
 
-\item{N_THREADS}{Number of threads available for parallel computing.}
+\item{N_THREADS}{Number of threads to use for parallel computing. Verify a
+sufficient number of cores with `parallel::detectCores()` first.}
 }
 \value{
-The method outputs several tables and plots to the `OUT_DIR` folder.
+The method outputs several tables and plots to the `out_dir` folder.
 }
 \description{
 MAAMOUL is a knowledge-based computational method that integrates metagenomic
