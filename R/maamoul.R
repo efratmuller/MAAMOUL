@@ -47,7 +47,8 @@
 #'   calculating the significance of each module.
 #' @param MODULE_FDR_THRESHOLD The FDR threshold to determine which modules are
 #'   significant.
-#' @param N_THREADS Number of threads available for parallel computing.
+#' @param N_THREADS Number of threads to use for parallel computing. Verify a
+#'   sufficient number of cores with `parallel::detectCores()` first.
 #'
 #' @return The method outputs several tables and plots to the `out_dir` folder.
 #'
@@ -362,6 +363,7 @@ maamoul <- function(
               tmp$modules_overview %>% mutate(Permutation_ID = j)
   }
   log_info('Finished graph random coloring iterations - permuted graphs.')
+  stopCluster(cl)
 
   modules_perm <- bind_rows(
     modules_overview %>% mutate(Permutation_ID = -1),
