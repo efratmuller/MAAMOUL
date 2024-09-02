@@ -116,6 +116,7 @@ maamoul <- function(
   suppressMessages(require(conflicted))   # Tested with version:
   conflict_prefer("select", "dplyr", quiet = T)
   conflict_prefer("filter", "dplyr", quiet = T)
+  conflict_prefer("as_data_frame", "igraph", quiet = T)
 
   # Verify that all parameters are valid
   if (!file.exists(global_network_edges))      log_error('Invalid *global_network_edges* argument. File not found')
