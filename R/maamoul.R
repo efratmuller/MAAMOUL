@@ -222,7 +222,7 @@ maamoul <- function(
     BUM_param_a = c(bum_ec$a, bum_mtb$a),
     BUM_param_lambda = c(bum_ec$lambda, bum_mtb$lambda),
     FDR_THRESHOLD = NODE_FDR_THRESHOLD,
-    anchor_pval_threshold = c(mtb_thres, ec_thres)
+    anchor_pval_threshold = c(ec_thres, mtb_thres)
   ) %>%
     write_csv(file.path(out_dir, 'bum_parameters.csv'))
 
